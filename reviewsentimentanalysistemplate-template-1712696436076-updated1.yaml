@@ -1,0 +1,266 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  LogGroupDetectSentiment:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::Logs::LogGroup"
+    DeletionPolicy: "Delete"
+    Properties:
+      LogGroupClass: "STANDARD"
+      LogGroupName: "/aws/vendedlogs/states/DetectSentimentMapState-Logs1"
+      DataProtectionPolicy: {}
+  S3Bucketreviewsoutputbucket:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::S3::Bucket"
+    DeletionPolicy: "Delete"
+    Properties:
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        BlockPublicAcls: true
+      BucketName: "reviewsoutputbucket1"
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: "BucketOwnerEnforced"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - BucketKeyEnabled: true
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+  IAMManagedPolicypolicyserviceroleStepFunctionsStartExecutionManagementScopedAccessPolicy:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::IAM::ManagedPolicy"
+    DeletionPolicy: "Delete"
+    Properties:
+      ManagedPolicyName: "StepFunctionsStartExecutionManagementScopedAccessPolicydetectsentiment1"
+      Path: "/service-role/"
+      Description: "Allows AWS Step Functions to start another workflow execution on your behalf."
+      Groups: []
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Resource: "*"
+          Action:
+          - "states:StartExecution"
+          - "states:StopExecution"
+          Effect: "Allow"
+        - Resource: "*"
+          Action:
+          - "states:DescribeExecution"
+          Effect: "Allow"
+      Users: []
+  IAMRoleStepFunctionsDetectSentimentMapStaterole:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::IAM::Role"
+    DeletionPolicy: "Delete"
+    Properties:
+      Path: "/service-role/"
+      ManagedPolicyArns:
+      - Ref: "IAMManagedPolicypolicyserviceroleStepFunctionsStartExecutionManagementScopedAccessPolicy"
+      - Ref: "IAMManagedPolicypolicyserviceroleS3GetObjectFullAccessPolicyDetectSentiment"
+      - Ref: "IAMManagedPolicypolicyserviceroleCloudWatchLogsDeliveryFullAccessPolicyDetectSentiment"
+      - Ref: "IAMManagedPolicypolicyDetectSentimentStateMachineComprehendS3PolicyDetectSentiment"
+      MaxSessionDuration: 3600
+      RoleName: "StepFunctionsDetectSentimentMapStaterole1"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Condition:
+            StringEquals:
+              aws:SourceAccount: !Ref "AWS::AccountId"
+            ArnLike:
+              aws:SourceArn: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*"
+          Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "states.amazonaws.com"
+  IAMManagedPolicypolicyserviceroleAmazonEventBridgeInvokeStepFunctionsDetectSentiment:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::IAM::ManagedPolicy"
+    DeletionPolicy: "Delete"
+    Properties:
+      ManagedPolicyName: "AmazonEventBridgeInvokeStepFunctionsDetectSentiment1"
+      Path: "/service-role/"
+      Description: ""
+      Groups: []
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Resource: "*"
+          Action:
+          - "states:StartExecution"
+          Effect: "Allow"
+      Users: []
+  IAMManagedPolicypolicyDetectSentimentStateMachineComprehendS3PolicyDetectSentiment:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::IAM::ManagedPolicy"
+    DeletionPolicy: "Delete"
+    Properties:
+      ManagedPolicyName: "DetectSentimentStateMachineComprehendS3PolicyDetectSentiment1"
+      Path: "/"
+      Description: ""
+      Groups: []
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Resource: "*"
+          Action: "comprehend:DetectSentiment"
+          Effect: "Allow"
+          Sid: "VisualEditor0"
+        - Resource: !Sub "arn:aws:s3:::${S3Bucketreviewsoutputbucket}/*"
+          Action: "s3:PutObject"
+          Effect: "Allow"
+          Sid: "VisualEditor1"
+      Users: []
+  S3Bucketreviewsinputbucket:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::S3::Bucket"
+    DeletionPolicy: "Delete"
+    Properties:
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        BlockPublicAcls: true
+      BucketName: "reviewsinputbucket1"
+      NotificationConfiguration:
+        EventBridgeConfiguration:
+          EventBridgeEnabled: true
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: "BucketOwnerEnforced"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - BucketKeyEnabled: true
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+  IAMRoleAmazonEventBridgeInvokeStepFunctionsDetectSentiment:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::IAM::Role"
+    DeletionPolicy: "Delete"
+    Properties:
+      Path: "/service-role/"
+      ManagedPolicyArns:
+      - Ref: "IAMManagedPolicypolicyserviceroleAmazonEventBridgeInvokeStepFunctionsDetectSentiment"
+      MaxSessionDuration: 3600
+      RoleName: "AmazonEventBridgeInvokeStepFunctionsDetectSentiment1"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "events.amazonaws.com"
+  StepFunctionsStateMachinestateMachineDetectSentimentMapState:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::StepFunctions::StateMachine"
+    DeletionPolicy: "Delete"
+    Properties:
+      DefinitionString: "{\"Comment\":\"A description of my state machine\",\"StartAt\"\
+        :\"Map\",\"States\":{\"Map\":{\"Type\":\"Map\",\"ItemProcessor\":{\"ProcessorConfig\"\
+        :{\"Mode\":\"DISTRIBUTED\",\"ExecutionType\":\"EXPRESS\"},\"StartAt\":\"DetectSentiment\"\
+        ,\"States\":{\"DetectSentiment\":{\"Type\":\"Task\",\"Parameters\":{\"LanguageCode.$\"\
+        :\"$.languageCode\",\"Text.$\":\"$.review\"},\"Resource\":\"arn:aws:states:::aws-sdk:comprehend:detectSentiment\"\
+        ,\"ResultSelector\":{\"Sentiment.$\":\"$.Sentiment\"},\"ResultPath\":\"$.Sentiment\"\
+        ,\"Next\":\"Sentiment Valid?\"},\"Sentiment Valid?\":{\"Type\":\"Choice\"\
+        ,\"Choices\":[{\"Or\":[{\"Variable\":\"$.Sentiment.Sentiment\",\"StringEquals\"\
+        :\"POSITIVE\"},{\"Variable\":\"$.Sentiment.Sentiment\",\"StringEquals\":\"\
+        NEGATIVE\"},{\"Variable\":\"$.Sentiment.Sentiment\",\"StringEquals\":\"NEUTRAL\"\
+        },{\"Variable\":\"$.Sentiment.Sentiment\",\"StringEquals\":\"MIXED\"}],\"\
+        Next\":\"Write Result to S3\"}],\"Default\":\"Fail\"},\"Fail\":{\"Type\":\"\
+        Fail\"},\"Write Result to S3\":{\"Type\":\"Task\",\"Parameters\":{\"Body\"\
+        :{\"reviewid.$\":\"$.reviewId\",\"sentiment.$\":\"$.Sentiment.Sentiment\"\
+        },\"Bucket\":\"${ReviewsOutputBucket}\",\"Key.$\":\"States.Format('{}.json',\
+        \ $.reviewId)\"},\"Resource\":\"arn:aws:states:::aws-sdk:s3:putObject\",\"\
+        Next\":\"Success\"},\"Success\":{\"Type\":\"Succeed\"}}},\"Label\":\"Map\"\
+        ,\"MaxConcurrency\":1000,\"ItemReader\":{\"Resource\":\"arn:aws:states:::s3:getObject\"\
+        ,\"ReaderConfig\":{\"InputType\":\"CSV\",\"CSVHeaderLocation\":\"FIRST_ROW\"\
+        },\"Parameters\":{\"Bucket.$\":\"$.detail.bucket.name\",\"Key.$\":\"$.detail.object.key\"\
+        }},\"End\":true}}}"
+      DefinitionSubstitutions:
+        ReviewsOutputBucket: !Ref S3Bucketreviewsoutputbucket
+      LoggingConfiguration:
+        IncludeExecutionData: true
+        Destinations:
+        - CloudWatchLogsLogGroup:
+            LogGroupArn:
+              Fn::GetAtt:
+              - "LogGroupDetectSentiment"
+              - "Arn"
+        Level: "ALL"
+      StateMachineName: "DetectSentimentMapState1"
+      RoleArn:
+        Fn::GetAtt:
+        - "IAMRoleStepFunctionsDetectSentimentMapStaterole"
+        - "Arn"
+      Tags: []
+      StateMachineType: "STANDARD"
+      TracingConfiguration:
+        Enabled: false
+  EventsRulerules3reviewdocumentput:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::Events::Rule"
+    DeletionPolicy: "Delete"
+    Properties:
+      EventPattern:
+        detail-type:
+        - "Object Created"
+        source:
+        - "aws.s3"
+        detail:
+          bucket:
+            name:
+            - !Ref S3Bucketreviewsinputbucket
+      Targets:
+      - Arn:
+          Fn::GetAtt:
+          - "StepFunctionsStateMachinestateMachineDetectSentimentMapState"
+          - "Arn"
+        Id: "detectsentimentmapstatestepfunction"
+        RoleArn:
+          Fn::GetAtt:
+          - "IAMRoleAmazonEventBridgeInvokeStepFunctionsDetectSentiment"
+          - "Arn"
+      State: "ENABLED"
+      Name: "s3reviewdocumentputrule1"
+  IAMManagedPolicypolicyserviceroleCloudWatchLogsDeliveryFullAccessPolicyDetectSentiment:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::IAM::ManagedPolicy"
+    DeletionPolicy: "Delete"
+    Properties:
+      ManagedPolicyName: "CloudWatchLogsDeliveryFullAccessPolicyDetectSentiment1"
+      Path: "/service-role/"
+      Description: "Allows AWS Step Functions to write execution logs to CloudWatch Logs on your behalf"
+      Groups: []
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Resource: "*"
+          Action:
+          - "logs:CreateLogDelivery"
+          - "logs:GetLogDelivery"
+          - "logs:UpdateLogDelivery"
+          - "logs:DeleteLogDelivery"
+          - "logs:ListLogDeliveries"
+          - "logs:PutResourcePolicy"
+          - "logs:DescribeResourcePolicies"
+          - "logs:DescribeLogGroups"
+          Effect: "Allow"
+      Users: []
+  IAMManagedPolicypolicyserviceroleS3GetObjectFullAccessPolicyDetectSentiment:
+    UpdateReplacePolicy: "Delete"
+    Type: "AWS::IAM::ManagedPolicy"
+    DeletionPolicy: "Delete"
+    Properties:
+      ManagedPolicyName: "S3GetObjectFullAccessPolicyDetectSentiment1"
+      Path: "/service-role/"
+      Description: "Allow AWS Step Functions to get objects from all S3 buckets on your behalf"
+      Groups: []
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Resource: "*"
+          Action:
+          - "s3:GetObject"
+          Effect: "Allow"
+      Users: []
