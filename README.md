@@ -48,6 +48,10 @@ Alternatively, you can delete the AWS CloudFormation stack with the AWS CLI by e
 aws cloudformation delete-stack --stack-name <your-stack-name>
 ```
 
+## Contributors
+
+[![Contributors](https://contrib.rocks/image?repo=aws-samples/automating-sentiment-analysis&max=2000)](https://github.com/aws-samples/automating-sentiment-analysis/graphs/contributors)
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
