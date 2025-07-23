@@ -1,6 +1,6 @@
 ## Automating Sentiment Analysis
 
-This reference solution automates the process of analyzing the sentiment of customer reviews and visualizing the results in Amazon QuickSight. It also introduces parallel processing by leveraging AWS Step Functions Map state and SDK service integrations.
+This reference solution automates the process of analyzing the sentiment of customer reviews and visualizing the results in Amazon QuickSight. It also introduces parallel processing by leveraging AWS Step Functions Map state in Distributed mode and SDK service integrations.
 
 ![Architecture Diagram](images/architecture-diagram.png)
 
