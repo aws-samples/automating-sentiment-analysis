@@ -18,7 +18,7 @@ Resources:
         IgnorePublicAcls: true
         BlockPublicPolicy: true
         BlockPublicAcls: true
-      BucketName: "reviewsoutputbucket1"
+      BucketName: !Sub "reviewsoutputbucket1-${AWS::AccountId}"
       OwnershipControls:
         Rules:
         - ObjectOwnership: "BucketOwnerEnforced"
@@ -122,7 +122,7 @@ Resources:
         IgnorePublicAcls: true
         BlockPublicPolicy: true
         BlockPublicAcls: true
-      BucketName: "reviewsinputbucket1"
+      BucketName: !Sub "reviewsinputbucket1-${AWS::AccountId}"
       NotificationConfiguration:
         EventBridgeConfiguration:
           EventBridgeEnabled: true
